@@ -47,6 +47,7 @@ C_SRCS += stm32f4xx_i2c.c
 C_SRCS += stm32f4xx_dma.c
 C_SRCS += stm32f4xx_syscfg.c
 C_SRCS += stm32f4xx_exti.c
+C_SRCS += stm32f4xx_usart.c
 C_SRCS += misc.c
 
 # Startup file written by ST

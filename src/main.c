@@ -42,6 +42,15 @@ RCC_ClocksTypeDef RCC_Clocks;
 
 /* Private function prototypes -----------------------------------------------*/
 static void Delay(__IO uint32_t nTime);
+static void USART_Config(void);
+
+#ifdef __GNUC__
+  /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+     set to 'Yes') calls __io_putchar() */
+  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -52,12 +61,18 @@ static void Delay(__IO uint32_t nTime);
   */
 int main(void)
 {
-  /* Initialize LEDs available on STM32F429I-DISCO */
+	/* Initialize LEDs available on STM32F429I-DISCO */
   STM_EVAL_LEDInit(LED3);
   STM_EVAL_LEDInit(LED4);
 
   /* Turn on LED3 */
   STM_EVAL_LEDOn(LED3);
+
+  /* USART configuration */
+  USART_Config();
+
+  /* Output a message on Hyperterminal using printf function */
+  printf("\n\rUSART Printf Example: retarget the C library printf function to the USART\n\r");
 	
 	/* Setup SysTick Timer for 1 msec interrupts.
 	------------------------------------------
@@ -98,6 +113,51 @@ int main(void)
 
 		Delay(50);
   }
+}
+
+	/**
+	  * @brief  Configures the USART Peripheral.
+	  * @param  None
+	  * @retval None
+	  */
+static void USART_Config(void)
+{
+  USART_InitTypeDef USART_InitStructure;
+
+  /* USARTx configured as follows:
+		- BaudRate = 115200 baud
+		- Word Length = 8 Bits
+		- One Stop Bit
+		- No parity
+		- Hardware flow control disabled (RTS and CTS signals)
+		- Receive and transmit enabled
+  */
+  USART_InitStructure.USART_BaudRate = 115200;
+  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+  USART_InitStructure.USART_StopBits = USART_StopBits_1;
+  USART_InitStructure.USART_Parity = USART_Parity_No;
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+
+  STM_EVAL_COMInit(COM1, &USART_InitStructure);
+}
+
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART */
+  USART_SendData(EVAL_COM1, (uint8_t) ch);
+
+  /* Loop until the end of transmission */
+  while (USART_GetFlagStatus(EVAL_COM1, USART_FLAG_TC) == RESET)
+  {}
+
+  return ch;
 }
 
 /**
